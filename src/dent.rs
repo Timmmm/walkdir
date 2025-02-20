@@ -46,7 +46,7 @@ pub struct DirEntry {
     /// The depth at which this entry was generated relative to the root.
     depth: usize,
     /// The underlying inode number (Unix only).
-    #[cfg(unix)]
+    #[cfg(any(unix, target_os = "wasi"))]
     ino: u64,
     /// The underlying metadata (Windows only). We store this on Windows
     /// because this comes for free while reading a directory.
@@ -196,12 +196,15 @@ impl DirEntry {
         Ok(DirEntry { path, ty, follow_link: false, depth, metadata: md })
     }
 
-    #[cfg(unix)]
+    #[cfg(any(unix, target_os = "wasi"))]
     pub(crate) fn from_entry(
         depth: usize,
         ent: &fs::DirEntry,
     ) -> Result<DirEntry> {
+        #[cfg(unix)]
         use std::os::unix::fs::DirEntryExt;
+        #[cfg(target_os = "wasi")]
+        use std::os::wasi::fs::DirEntryExt;
 
         let ty = ent
             .file_type()
@@ -215,7 +218,7 @@ impl DirEntry {
         })
     }
 
-    #[cfg(not(any(unix, windows)))]
+    #[cfg(not(any(unix, windows, target_os = "wasi")))]
     pub(crate) fn from_entry(
         depth: usize,
         ent: &fs::DirEntry,
@@ -248,13 +251,16 @@ impl DirEntry {
         })
     }
 
-    #[cfg(unix)]
+    #[cfg(any(unix, target_os = "wasi"))]
     pub(crate) fn from_path(
         depth: usize,
         pb: PathBuf,
         follow: bool,
     ) -> Result<DirEntry> {
+        #[cfg(unix)]
         use std::os::unix::fs::MetadataExt;
+        #[cfg(target_os = "wasi")]
+        use std::os::wasi::fs::MetadataExt;
 
         let md = if follow {
             fs::metadata(&pb)
@@ -272,7 +278,7 @@ impl DirEntry {
         })
     }
 
-    #[cfg(not(any(unix, windows)))]
+    #[cfg(not(any(unix, windows, target_os = "wasi")))]
     pub(crate) fn from_path(
         depth: usize,
         pb: PathBuf,
@@ -306,7 +312,7 @@ impl Clone for DirEntry {
         }
     }
 
-    #[cfg(unix)]
+    #[cfg(any(unix, target_os = "wasi"))]
     fn clone(&self) -> DirEntry {
         DirEntry {
             path: self.path.clone(),
@@ -317,7 +323,7 @@ impl Clone for DirEntry {
         }
     }
 
-    #[cfg(not(any(unix, windows)))]
+    #[cfg(not(any(unix, windows, target_os = "wasi")))]
     fn clone(&self) -> DirEntry {
         DirEntry {
             path: self.path.clone(),
@@ -335,14 +341,14 @@ impl fmt::Debug for DirEntry {
 }
 
 /// Unix-specific extension methods for `walkdir::DirEntry`
-#[cfg(unix)]
+#[cfg(any(unix, target_os = "wasi"))]
 pub trait DirEntryExt {
     /// Returns the underlying `d_ino` field in the contained `dirent`
     /// structure.
     fn ino(&self) -> u64;
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, target_os = "wasi"))]
 impl DirEntryExt for DirEntry {
     /// Returns the underlying `d_ino` field in the contained `dirent`
     /// structure.

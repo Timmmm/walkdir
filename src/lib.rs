@@ -105,6 +105,9 @@ for entry in walker.filter_entry(|e| !is_hidden(e)) {
 
 #![deny(missing_docs)]
 #![allow(unknown_lints)]
+// https://github.com/rust-lang/rust/issues/130323
+#![cfg_attr(all(target_os = "wasi", target_env = "p2"), feature(wasip2))]
+#![cfg_attr(target_os = "wasi", feature(wasi_ext))]
 
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");
@@ -121,7 +124,7 @@ use std::vec;
 use same_file::Handle;
 
 pub use crate::dent::DirEntry;
-#[cfg(unix)]
+#[cfg(any(unix, target_os = "wasi"))]
 pub use crate::dent::DirEntryExt;
 pub use crate::error::Error;
 

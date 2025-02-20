@@ -160,6 +160,12 @@ impl Dir {
             symlink(src, link_name)
         }
 
+        #[cfg(target_os = "wasi")]
+        fn imp(src: &Path, link_name: &Path) -> io::Result<()> {
+            use std::os::wasi::fs::symlink_path;
+            symlink_path(src, link_name)
+        }
+
         let (src, link_name) = (self.join(src), self.join(link_name));
         imp(&src, &link_name)
             .map_err(|e| {
@@ -189,6 +195,12 @@ impl Dir {
         fn imp(src: &Path, link_name: &Path) -> io::Result<()> {
             use std::os::unix::fs::symlink;
             symlink(src, link_name)
+        }
+
+        #[cfg(target_os = "wasi")]
+        fn imp(src: &Path, link_name: &Path) -> io::Result<()> {
+            use std::os::wasi::fs::symlink_path;
+            symlink_path(src, link_name)
         }
 
         let (src, link_name) = (self.join(src), self.join(link_name));
